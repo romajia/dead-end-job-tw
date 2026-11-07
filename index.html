@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#090b12" />
+    <meta name="description" content="窮徒莫入：一路好走人力銀行 — 一款台灣黑色幽默像素生存遊戲。" />
+    <title>窮徒莫入：一路好走人力銀行</title>
+    <style>
+      :root { color-scheme: dark; font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif; }
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #090b12; touch-action: none; user-select: none; -webkit-user-select: none; }
+      body { display: grid; place-items: center; }
+      #game-root { position: relative; width: 100vw; height: 100dvh; overflow: hidden; background: #090b12; }
+      #game { position: absolute; inset: 0; display: grid; place-items: center; }
+      #game canvas { display: block; width: 100% !important; height: 100% !important; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; }
+      #ui-root { position: absolute; inset: 0; pointer-events: none; color: #fff3d4; z-index: 5; }
+      .screen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 3vw; pointer-events: auto; background: radial-gradient(ellipse at 50% 45%, rgba(21,25,34,.28), rgba(5,7,12,.77)); }
+      .card { width: min(850px, 92vw); padding: clamp(18px, 3vw, 36px); border: 2px solid #e3b764; background: linear-gradient(135deg, rgba(24,28,38,.97), rgba(9,12,19,.97)); box-shadow: 0 0 0 5px #12141a, 0 16px 60px #000b; }
+      .eyebrow { color: #8fe0a8; font-size: clamp(11px, 1.4vw, 16px); letter-spacing: .18em; }
+      h1 { margin: .35em 0 .2em; color: #f9d98c; font-size: clamp(26px, 5vw, 52px); line-height: 1.14; text-shadow: 3px 3px #593b28; }
+      h2 { margin: 0 0 .5em; color: #f7d07c; font-size: clamp(20px, 3vw, 30px); }
+      p { line-height: 1.75; margin: .5em 0; color: #e7dfcf; font-size: clamp(13px, 1.7vw, 17px); }
+      .dialogue { padding: 12px 16px; background: #10151dcc; border-left: 4px solid #7ed49a; margin: 18px 0; }
+      .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 20px; }
+      button { pointer-events: auto; border: 2px solid #f5d27d; padding: 12px 20px; color: #16130d; background: linear-gradient(#ffeaa7,#e6a840); font: 800 16px inherit; font-size: clamp(14px, 1.8vw, 18px); cursor: pointer; box-shadow: 0 4px 0 #714d25; touch-action: manipulation; }
+      button:active { transform: translateY(3px); box-shadow: 0 1px 0 #714d25; }
+      button.secondary { background: #202a35; color: #f4e8cf; border-color: #678798; box-shadow: 0 4px 0 #111820; }
+      .small { font-size: 12px; color: #a8a89f; }
+      #hud { position: absolute; inset: 0; display: none; pointer-events: none; }
+      #hud-top { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+      .hud-box { padding: 9px 12px; background: #080b12d9; border: 1px solid #a9844b; box-shadow: 3px 3px 0 #0008; font-size: clamp(11px, 1.3vw, 15px); }
+      #mission { max-width: 46vw; }
+      #vitals { min-width: 210px; text-align: right; }
+      .bar { width: min(210px, 36vw); height: 8px; background: #292329; border: 1px solid #78624b; margin: 4px 0 0 auto; }
+      .bar > i { display: block; height: 100%; width: 100%; background: #e05255; }
+      #oxygen-bar > i { background: #5ec8d7; }
+      #prompt { position: absolute; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); max-width: 75vw; padding: 10px 16px; background: #0a0c12e8; border: 1px solid #e0b45e; text-align: center; font-weight: 700; font-size: clamp(12px, 1.7vw, 18px); }
+      #gamepad-indicator { position: absolute; top: 84px; right: 14px; padding: 6px 10px; border: 1px solid #54606c; border-radius: 999px; color: #a9b0b8; background: #080b12d9; font-size: 11px; }
+      #gamepad-indicator.connected { border-color: #6bca87; color: #a3f4b4; }
+      #hud.rumble #hud-top .hud-box { animation: rumble-pulse .14s ease-in-out 2; }
+      @keyframes rumble-pulse { 50% { outline: 3px solid #94f78b; box-shadow: 0 0 18px #8ff47c99; } }
+      #dialogue { position: absolute; bottom: 78px; left: 50%; transform: translateX(-50%); width: min(780px, 84vw); display: none; padding: 13px 18px; background: #10141eeF; border-left: 4px solid #e3b764; box-shadow: 4px 4px 0 #0008; font-size: clamp(13px, 1.7vw, 18px); line-height: 1.7; }
+      #calendar-modal { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 20px; background: #02040bd9; pointer-events: auto; }
+      #calendar-sheet { width: min(720px, 92vw); max-height: 88dvh; overflow: auto; padding: clamp(18px, 3vw, 32px); background: #eee1bd; color: #2d1c16; border: 8px double #8c352b; box-shadow: 0 0 0 6px #1a1110, 0 18px 70px #000; }
+      #calendar-sheet h2 { color: #922c25; text-align: center; border-bottom: 1px solid #b28e64; padding-bottom: 10px; }
+      #calendar-sheet p { color: #39251c; }
+      #calendar-sheet .rule { padding: 10px 12px; background: #fff9e9; border: 1px solid #d7c19b; margin: 10px 0; }
+      #calendar-sheet button { display: block; margin: 16px auto 0; }
+      #touch-controls { display: none; position: absolute; inset: 0; pointer-events: none; }
+      #move-pad, #aim-pad { position: absolute; bottom: max(38px, env(safe-area-inset-bottom)); width: 120px; height: 120px; border: 2px solid #ffffff42; border-radius: 50%; background: #d8e6ff12; pointer-events: auto; touch-action: none; }
+      #move-pad { left: max(22px, env(safe-area-inset-left)); }
+      #aim-pad { right: max(22px, env(safe-area-inset-right)); }
+      .pad-knob { position: absolute; width: 44px; height: 44px; left: 36px; top: 36px; border-radius: 50%; background: #d8e6ff65; border: 2px solid #fff9; pointer-events: none; }
+      #touch-actions { position: absolute; right: max(155px, calc(env(safe-area-inset-right) + 150px)); bottom: max(34px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, 54px); gap: 8px; pointer-events: auto; }
+      .touch-btn { width: 54px; height: 54px; display: grid; place-items: center; padding: 0; border-radius: 50%; border: 2px solid #fff9; background: #15201ee8; color: white; font-size: 20px; box-shadow: none; touch-action: none; }
+      .touch-btn.attack { border-color: #8be76e; background: #21491be8; }
+      .touch-btn.breath.active { background: #25809a; }
+      #orientation-warning { display: none; position: absolute; inset: 0; z-index: 20; align-items: center; justify-content: center; padding: 28px; background: #0b1016; color: #f8dda1; text-align: center; font-size: 22px; line-height: 1.7; }
+      @media (orientation: portrait) { #orientation-warning { display: flex; } }
+      @media (max-width: 760px) { #mission { max-width: 52vw; } #vitals { min-width: 155px; } #gamepad-indicator { top: 114px; } #prompt { bottom: 165px; } #dialogue { bottom: 200px; } }
+      @media (max-height: 500px) { .screen { padding: 10px; } .card { padding: 14px 20px; } #touch-actions { grid-template-columns: repeat(4, 48px); right: 165px; } .touch-btn { width: 48px; height: 48px; } }
+    </style>
+  </head>
+  <body>
+    <main id="game-root">
+      <div id="game" aria-label="遊戲畫面"></div>
+      <div id="ui-root">
+        <section id="menu-screen" class="screen">
+          <div class="card">
+            <div class="eyebrow">一路好走人力銀行・夜班派遣通知</div>
+            <h1>窮徒莫入</h1>
+            <h2>一路好走人力銀行</h2>
+            <div class="dialogue"><strong>許見財：</strong>「媽的連電費都催三次了……時薪 196，先做再說。」<br><strong>聞淨香：</strong>「茶先收著。遇到不對勁的事，至少要活著領那 84 元。」</div>
+            <p>頂樓欠費單：房租、母親連帶保證債務、電費。今晚工作：俗俗埋 24H 生鮮百貨大夜班。</p>
+            <p id="save-summary">帳戶：NT$ 0　｜　裝備：菊花枸杞茶 × 1</p>
+            <div class="actions"><button id="accept-button">ACCEPT — 時薪 NT$ 196</button><button id="reset-button" class="secondary">清除存檔</button></div>
+            <p class="small">操作：A/D 移動、滑鼠瞄準、Space 算力斬、Shift 翻滾、W 躲藏、C 憋氣、R 撕日曆、E 互動。支援標準手把與觸控。</p>
+          </div>
+        </section>
+        <section id="hud">
+          <div id="hud-top">
+            <div id="mission" class="hud-box"><b id="night-label">第 1 夜：都市怪談—深夜福利社</b><div id="objective">跟著阿東仔熟悉工作環境。</div></div>
+            <div id="vitals" class="hud-box"><b id="clock-label">01:55 AM</b><div id="hp-label">阿財 HP 100 / 100</div><div class="bar"><i id="hp-fill"></i></div><div id="oxygen-label">憋氣 100%</div><div id="oxygen-bar" class="bar"><i></i></div><div id="boss-label"></div></div>
+          </div>
+          <div id="gamepad-indicator">○ 手把未連線</div>
+          <div id="dialogue"></div>
+          <div id="prompt">右搖桿／滑鼠：照手電筒</div>
+          <div id="calendar-modal"><article id="calendar-sheet"><h2>俗俗埋・夜班交接農民曆</h2><div id="calendar-content"></div><button id="calendar-continue">看完了　→</button></article></div>
+          <div id="touch-controls">
+            <div id="move-pad"><i class="pad-knob"></i></div><div id="aim-pad"><i class="pad-knob"></i></div>
+            <div id="touch-actions">
+              <button class="touch-btn" data-action="interact" aria-label="互動">✋</button><button class="touch-btn" data-action="hide" aria-label="躲藏">📦</button>
+              <button class="touch-btn attack" data-action="slash" aria-label="算力斬">⚔️</button><button class="touch-btn" data-action="dodge" aria-label="翻滾">💨</button>
+              <button class="touch-btn breath" data-action="breath" aria-label="憋氣">🫁</button><button class="touch-btn" data-action="tear" aria-label="撕日曆">👇</button>
+            </div>
+          </div>
+        </section>
+        <section id="ending-screen" class="screen" style="display:none"><div class="card"><div class="eyebrow">06:00 AM・俗俗埋提款機</div><h1>夜班結算</h1><div id="ending-copy"></div><div class="actions"><button id="continue-button">存檔並前往第 2 夜</button></div></div></section>
+      </div>
+      <div id="orientation-warning">請將手機橫放，<br>才看得到水溝歹咪仔喔！</div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
